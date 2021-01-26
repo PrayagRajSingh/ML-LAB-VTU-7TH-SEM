@@ -1,0 +1,555 @@
+# 1st program
+
+import csv
+attributes = [['Sunny','Rainy'],['Warm','Cold'],['Normal','High'],
+              ['Strong','Weak'],['Warm','Cool'],['Same','Change']]
+
+num_attributes = len(attributes);
+
+
+print(" \n The most general hypothesis:['?','?','?','?','?','?']\n")
+print(" \n The most specific hypothesis:['0','0','0','0','0','0']\n")
+
+
+a = []
+print("\n The given training data set: \n")
+with open('/home/exam/Desktop/ML Datasets/c1.csv','r') as csvFile:
+    reader = csv.reader(csvFile)
+    for row in reader:
+        a.append(row)
+        print(row)
+        
+print("\n The initial value of hypothesis:")
+hypothesis = ['0'] * num_attributes
+print(hypothesis)
+
+#Compare with first training example
+for j in range(0,num_attributes):
+    hypothesis[j] = a[0][j]
+    
+#Compare with remaining training examples of given data set
+print("\n Find S:Finding a maximally specific hypothesis\n")
+for i in range(0,len(a)):
+    if a[i][num_attributes]=='Y':
+        for j in range(0,num_attributes):
+            if a[i][j]!= hypothesis[j]:
+                hypothesis[j]= '?'
+            else:
+                hypothesis[j] = a[i][j]
+    print("For training example number: {0} the hypothesis is ".format(i),hypothesis)
+print("\nThe maximally specific hypothesis for a given training examples: \n")
+print(hypothesis)
+    
+------------------------------------------------------------------------------------------
+
+# 2nd Program
+
+mport csv
+s=[0,0,0,0,0,0]
+g=["?","?","?","?","?","?"]
+p=["?","?","?","?","?","?"]
+def gen():
+    for k in range(1,len(i)-1):
+        if i[k]!=s[k-1]:
+            g[k-1]=s[k-1]
+with open("/home/exam/Desktop/a.csv") as csvfile:
+    csvreader=csv.reader(csvfile)
+    for i in csvreader:
+        if i[7]=="yes":
+            if s[0]==0:
+                s=i[1:7]
+            else:
+                for k in range(1,len(i)-1):
+                    if i[k]!=s[k-1]:
+                        s[k-1]="?"            
+        else:     
+            gen()
+    gen()  
+    print("Specific Hypothesis :\n",s)
+    print("General Hypothesis :")
+    for i in range(0,len(g)):
+        if(g[i]!="?"):
+            p[i]=g[i]
+            print(p)
+        p[i]="?"
+---------------------------------------------------------------------------------------
+
+#3rd Program
+
+import math
+import csv
+
+def load_csv(filename):
+    lines = csv.reader(open(filename, "r"));
+    dataset = list(lines)
+    headers = dataset.pop(0)
+    return dataset, headers
+
+class Node:
+    def __init__(self, attribute):
+        self.attribute = attribute
+        self.children = []
+        self.answer = ""
+        
+def subtables(data, col, delete):
+    dic = {}
+    coldata = [ row[col] for row in data]
+    attr = list(set(coldata))
+    
+    for k in attr:
+        dic[k] = []
+        
+    for y in range(len(data)):
+        key = data[y][col]
+        if delete:
+            del data[y][col]
+        dic[key].append(data[y])
+        
+    return attr, dic
+
+def entropy(S):
+    attr = list(set(S))
+    if len(attr) == 1: #if all are +ve/-ve then entropy = 0
+        return 0
+    
+    counts = [0,0] # Only two values possible 'yes' or 'no'
+    for i in range(2):
+        counts[i] = sum( [1 for x in S if attr[i] == x] ) / (len(S) * 1.0)
+    
+    sums = 0
+    for cnt in counts:
+        sums += -1 * cnt * math.log(cnt, 2)
+    return sums
+
+def compute_gain(data, col):
+    attValues, dic = subtables(data, col, delete=False)
+    
+    total_entropy = entropy([row[-1] for row in data])
+    
+  
+    for x in range(len(attValues)):
+        ratio = len(dic[attValues[x]]) / ( len(data) * 1.0)
+        entro = entropy([row[-1] for row in dic[attValues[x]]])
+        total_entropy -= ratio*entro
+    return total_entropy
+
+def build_tree(data, features):
+    lastcol = [row[-1] for row in data]
+    if (len(set(lastcol))) == 1: # If all samples have same labels return that label
+        node=Node("")
+        node.answer = lastcol[0]
+        return node
+    n = len(data[0])-1
+    gains = [compute_gain(data, col) for col in range(n) ]
+    split = gains.index(max(gains)) # Find max gains and returns index
+    node = Node(features[split]) # 'node' stores attribute selected
+    #del (features[split])
+    fea = features[:split]+features[split+1:]
+    
+    attr, dic = subtables(data, split, delete=True) # Data will be spilt in subtables
+    for x in range(len(attr)):
+        child = build_tree(dic[attr[x]], fea)
+        node.children.append((attr[x], child))
+    return node
+
+def print_tree(node, level):
+    if node.answer != "":
+        print(" "*level, node.answer) # Displays leaf node yes/no
+        return
+    print(" "*level, node.attribute) # Displays attribute Name
+    for value, n in node.children:
+        print(" "*(level+1), value)
+        print_tree(n, level + 2)
+        
+def classify(node,x_test,features):
+    if node.answer != "":
+        print(node.answer)
+        return
+
+    pos = features.index(node.attribute)
+    for value, n in node.children:
+        if x_test[pos]==value:
+            classify(n,x_test,features)
+        
+dataset, features = load_csv("/home/exam/Desktop/ML Datasets/data3.csv") # Read Tennis data
+node = build_tree(dataset, features)
+
+print("The decision tree for the dataset using ID3 algorithm is ")
+print_tree(node, 0)
+
+testdata, features = load_csv("/home/exam/Desktop/ML Datasets/data3_test.csv")
+for xtest in testdata:
+    print("The test instance : ",xtest)
+    print("The predicted label : ", end="")
+    classify(node,xtest,features)
+    
+---------------------------------------------------------------------------------------
+
+#4th Program
+
+import numpy as np 
+X = np.array(([2, 9], [1, 5], [3, 6]), dtype=float) 
+y = np.array(([92], [86], [89]), dtype=float)
+
+X = X/np.amax(X,axis=0) 
+y = y/100
+def sigmoid(x):
+	return 1/(1 + np.exp(-x))
+
+def sigmoid_grad(x):
+	return x * (1 - x)
+
+epoch=1000
+eta =0.2
+input_neurons = 2
+hidden_neurons = 3 
+output_neurons = 1
+
+wh=np.random.uniform(size=(input_neurons,hidden_neurons))
+bh=np.random.uniform(size=(1,hidden_neurons))
+
+wout=np.random.uniform(size=(hidden_neurons,output_neurons)) 
+bout=np.random.uniform(size=(1,output_neurons))
+
+for i in range(epoch):
+	h_ip=np.dot(X,wh) + bh
+    	h_act = sigmoid(h_ip)
+    	o_ip=np.dot(h_act,wout) + bout
+    	output = sigmoid(o_ip)
+    	Eo = y-output
+    	outgrad = sigmoid_grad(output)
+    	d_output = Eo* outgrad
+    	Eh = d_output.dot(wout.T)
+    	hiddengrad = sigmoid_grad(h_act)
+    	d_hidden = Eh * hiddengrad
+    	wout += h_act.T.dot(d_output) *eta
+    	wh += X.T.dot(d_hidden) *eta
+
+print("Normalized Input: \n" + str(X))
+print("Actual Output: \n" + str(y))
+print("Predicted Output: \n" ,output)
+
+------------------------------------------------------------------------------------------------
+
+#5th program
+
+import csv, random, math
+import statistics as st
+
+def loadCsv(filename):
+    lines = csv.reader(open(filename, "r"));
+    dataset = list(lines)
+    for i in range(len(dataset)):
+        dataset[i] = [float(x) for x in dataset[i]]
+    return dataset
+
+def splitDataset(dataset, splitRatio):
+    testSize = int(len(dataset) * splitRatio);
+    trainSet = list(dataset);
+    testSet = []
+    while len(testSet) < testSize:
+        index = random.randrange(len(trainSet));
+        testSet.append(trainSet.pop(index))
+    return [trainSet, testSet]
+
+
+def separateByClass(dataset):
+    separated = {}
+    for i in range(len(dataset)):
+        x = dataset[i]
+        if (x[-1] not in separated):
+            separated[x[-1]] = []
+        separated[x[-1]].append(x)
+    return separated
+
+
+def compute_mean_std(dataset):
+    mean_std = [ (st.mean(attribute), st.stdev(attribute))
+        for attribute in zip(*dataset)];
+    del mean_std[-1] 
+    return mean_std
+
+
+def summarizeByClass(dataset):
+    separated = separateByClass(dataset);
+    summary = {} 
+    for classValue, instances in separated.items():
+        summary[classValue] = compute_mean_std(instances)
+    return summary
+
+
+def estimateProbability(x, mean, stdev):
+    exponent = math.exp(-(math.pow(x-mean,2)/(2*math.pow(stdev,2))))
+    return (1 / (math.sqrt(2*math.pi) * stdev)) * exponent
+
+def calculateClassProbabilities(summaries, testVector):
+    p = {}
+    for classValue, classSummaries in summaries.items():
+        p[classValue] = 1
+        for i in range(len(classSummaries)):
+            mean, stdev = classSummaries[i]
+            x = testVector[i] 
+            p[classValue] *= estimateProbability(x, mean, stdev);
+    return p
+
+
+def predict(summaries, testVector):
+    all_p = calculateClassProbabilities(summaries, testVector)
+    bestLabel, bestProb = None, -1
+    for lbl, p in all_p.items():
+        if bestLabel is None or p > bestProb:
+            bestProb = p
+            bestLabel = lbl
+    return bestLabel
+
+
+def perform_classification(summaries, testSet):
+    predictions = []
+    for i in range(len(testSet)):
+        result = predict(summaries, testSet[i])
+        predictions.append(result)
+    return predictions
+
+
+def getAccuracy(testSet, predictions):
+    correct = 0
+    for i in range(len(testSet)):
+        if testSet[i][-1] == predictions[i]:
+            correct += 1
+    return (correct/float(len(testSet))) * 100.0
+dataset = loadCsv('/home/exam/Desktop/ML Datasets/data5.csv');
+print('Pima Indian Diabetes Dataset loaded...')
+print('Total instances available :',len(dataset))
+print('Total attributes present :',len(dataset[0])-1)
+print("First Five instances of dataset:")
+for i in range(5):
+    print(i+1 , ':' , dataset[i])
+splitRatio = 0.2
+trainingSet, testSet = splitDataset(dataset, splitRatio)
+print('\nDataset is split into training and testing set.')
+print('Training examples = {0} \nTesting examples = {1}'.format(len(trainingSet),len(testSet)))
+summaries = summarizeByClass(trainingSet);
+predictions = perform_classification(summaries, testSet)
+accuracy = getAccuracy(testSet, predictions)
+print('\nAccuracy of the Naive Baysian Classifier is :', accuracy)
+
+--------------------------------------------------------------------------------------------------
+
+#6th Program
+
+import pandas as pd
+msg=pd.read_csv('/home/exam/Desktop/ML Datasets/data6.csv',names=['message','label']) 
+print('Total instances in the dataset:',msg.shape[0])
+
+
+msg['labelnum']=msg.label.map({'pos':1,'neg':0})
+X=msg.message
+Y=msg.labelnum
+
+
+print('\nThe message and its label of first 5 instances are listed below')
+X5, Y5 = X[0:5], msg.label[0:5]
+for x, y in zip(X5,Y5):
+    print(x,',',y)
+    
+from sklearn.model_selection import train_test_split
+xtrain,xtest,ytrain,ytest=train_test_split(X,Y)
+print('\nDataset is split into Training and Testing samples')
+print('Total training instances :', xtrain.shape[0])
+print('Total testing instances :', xtest.shape[0])
+
+
+from sklearn.feature_extraction.text import CountVectorizer
+count_vect = CountVectorizer()
+xtrain_dtm = count_vect.fit_transform(xtrain) 
+xtest_dtm = count_vect.transform(xtest)
+print('\nTotal features extracted using CountVectorizer:',xtrain_dtm.shape[1])
+
+
+print('\nFeatures for first 5 training instances are listed below')
+df=pd.DataFrame(xtrain_dtm.toarray(),columns=count_vect.get_feature_names())
+print(df[0:5])
+
+from sklearn.naive_bayes import MultinomialNB
+clf = MultinomialNB().fit(xtrain_dtm,ytrain)
+predicted = clf.predict(xtest_dtm)
+
+
+print('\nClassstification results of testing samples are given below')
+for doc, p in zip(xtest, predicted):
+    pred = 'pos' if p==1 else 'neg'
+    print('%s -> %s ' % (doc, pred))
+
+from sklearn import metrics
+print('\nAccuracy metrics')
+print('Accuracy of the classifer is',metrics.accuracy_score(ytest,predicted))
+print('Recall :',metrics.recall_score(ytest,predicted),
+'\nPrecison :',metrics.precision_score(ytest,predicted))
+print('Confusion matrix')
+print(metrics.confusion_matrix(ytest,predicted))
+
+-------------------------------------------------------------------------------------------
+
+#7th Program
+
+import numpy as np
+import pandas as pd
+import csv
+from pgmpy.estimators import MaximumLikelihoodEstimator
+from pgmpy.models import BayesianModel
+from pgmpy.inference import VariableElimination
+
+lines = list(csv.reader(open('/home/exam/Desktop/ML Datasets/data7_names.csv', 'r')));
+attributes = lines[0]
+heartDisease = pd.read_csv('//home/exam/Desktop/ML Datasets/data7_heart.csv', names = attributes)
+heartDisease = heartDisease.replace('?', np.nan)
+model = BayesianModel([('age', 'trestbps'), ('age', 'fbs'), ('sex', 'trestbps'), ('sex', 'trestbps'),
+('exang', 'trestbps'),('trestbps','heartdisease'),('fbs','heartdisease'),
+('heartdisease','restecg'),('heartdisease','thalach'),('heartdisease','chol')])
+print('\nLearning CPDs using Maximum Likelihood Estimators...');
+model.fit(heartDisease, estimator=MaximumLikelihoodEstimator)
+print('\nInferencing with Bayesian Network:')
+HeartDisease_infer = VariableElimination(model)
+print('\n1.Probability of HeartDisease given Age=28')
+q = HeartDisease_infer.query(variables=['heartdisease'], evidence={'age': 28})
+print(q['heartdisease'])
+print('\n2. Probability of HeartDisease given chol (Cholestoral) =100')
+q = HeartDisease_infer.query(variables=['heartdisease'], evidence={'chol': 100})
+print(q['heartdisease'])
+
+--------------------------------------------------------------------------------------------
+
+#8th Program
+
+import matplotlib.pyplot as plt
+from sklearn import datasets
+from sklearn.cluster import KMeans
+import pandas as pd
+import numpy as np
+# import some data to play with
+iris = datasets.load_iris()
+X = pd.DataFrame(iris.data)
+X.columns = ['Sepal_Length','Sepal_Width','Petal_Length','Petal_Width']
+y = pd.DataFrame(iris.target)
+y.columns = ['Targets']
+# Build the K Means Model
+model = KMeans(n_clusters=3)
+model.fit(X) # model.labels_ : Gives cluster no for which samples belongs to
+# # Visualise the clustering results
+plt.figure(figsize=(14,14))
+colormap = np.array(['red', 'lime', 'black'])
+# Plot the Original Classifications using Petal features
+plt.subplot(2, 2, 1)
+plt.scatter(X.Petal_Length, X.Petal_Width, c=colormap[y.Targets], s=40)
+plt.title('Real Clusters')
+plt.xlabel('Petal Length')
+plt.ylabel('Petal Width')
+# Plot the Models Classifications
+plt.subplot(2, 2, 2)
+plt.scatter(X.Petal_Length, X.Petal_Width, c=colormap[model.labels_], s=40)
+plt.title('K-Means Clustering')
+plt.xlabel('Petal Length')
+plt.ylabel('Petal Width')
+# General EM for GMM
+from sklearn import preprocessing
+# transform your data such that its distribution will have a
+# mean value 0 and standard deviation of 1.
+scaler = preprocessing.StandardScaler()
+scaler.fit(X)
+xsa = scaler.transform(X)
+xs = pd.DataFrame(xsa, columns = X.columns)
+from sklearn.mixture import GaussianMixture
+gmm = GaussianMixture(n_components=3)
+gmm.fit(xs)
+gmm_y = gmm.predict(xs)
+plt.subplot(2, 2, 3)
+plt.scatter(X.Petal_Length, X.Petal_Width, c=colormap[gmm_y], s=40)
+plt.title('GMM Clustering')
+plt.xlabel('Petal Length')
+plt.ylabel('Petal Width')
+print('Observation: The GMM using EM algorithm based clustering matched the true labels more closely than the Kmeans.')
+
+-------------------------------------------------------------------------------------------
+
+#9th Program
+
+# import the required packages
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn import datasets
+# Load dataset
+iris=datasets.load_iris()
+print("Iris Data set loaded...")
+# Split the data into train and test samples
+x_train, x_test, y_train, y_test = train_test_split(iris.data,iris.target,test_size=0.1)
+print("Dataset is split into training and testing...")
+print("Size of trainng data and its label",x_train.shape,y_train.shape)
+print("Size of trainng data and its label",x_test.shape, y_test.shape)
+# Prints Label no. and their names
+for i in range(len(iris.target_names)):
+    print("Label", i , "-",str(iris.target_names[i]))
+# Create object of KNN classifier
+classifier = KNeighborsClassifier(n_neighbors=1)
+# Perform Training
+classifier.fit(x_train, y_train)
+# Perform testing
+y_pred=classifier.predict(x_test)
+# Display the results
+print("Results of Classification using K-nn with K=1 ")
+for r in range(0,len(x_test)):
+    print(" Sample:", str(x_test[r]), " Actual-label:", str(y_test[r]), " Predicted-label:",str(y_pred[r]))
+print("Classification Accuracy :" , classifier.score(x_test,y_test));
+
+--------------------------------------------------------------------------------------------
+
+#10th Program
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+def kernel(point,xmat, k):
+    m,n = np.shape(xmat)
+    weights = np.mat(np.eye((m))) # eye - identity matrix
+    for j in range(m):
+        diff = point - X[j]
+        weights[j,j] = np.exp(diff*diff.T/(-2.0*k**2))
+    return weights
+
+
+def localWeight(point,xmat,ymat,k):
+    wei = kernel(point,xmat,k)
+    W = (X.T*(wei*X)).I*(X.T*(wei*ymat.T))
+    return W
+
+def localWeightRegression(xmat,ymat,k):
+    m,n = np.shape(xmat)
+    ypred = np.zeros(m)
+    for i in range(m):
+        ypred[i] = xmat[i]*localWeight(xmat[i],xmat,ymat,k)
+    return ypred
+
+def graphPlot(X,ypred):
+    sortindex = X[:,1].argsort(0) #argsort - index of the smallest
+    xsort = X[sortindex][:,0]
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    ax.scatter(bill,tip, color='green')
+    ax.plot(xsort[:,1],ypred[sortindex], color = 'red', linewidth=5)
+    plt.xlabel('Total bill')
+    plt.ylabel('Tip')
+    plt.show();
+# load data points
+data = pd.read_csv('/home/exam/Desktop/ML Datasets/data10_tips.csv')
+bill = np.array(data.total_bill) # We use only Bill amount and Tips data
+tip = np.array(data.tip)
+
+mbill = np.mat(bill) # .mat will convert nd array is converted in 2D array
+mtip = np.mat(tip)
+m= np.shape(mbill)[1]
+one = np.mat(np.ones(m))
+X = np.hstack((one.T,mbill.T)) # 244 rows, 2 cols
+
+ypred = localWeightRegression(X,mtip,0.5) # increase k to get smooth curves
+graphPlot(X,ypred)
+
+----------------------------------------------------------------------------------------------
