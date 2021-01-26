@@ -1,0 +1,83 @@
+#5th program
+import csv,random,math
+import statistics as st
+def loadCsv(filename):
+    lines=csv.reader(open(filename,"r"))
+    dataset=list(lines)
+    for i in range(len(dataset)):
+        dataset[i]=[float(x) for x in dataset[i]]
+    return dataset
+def splitdataset(dataset,splitratio):
+    testsize=int(len(dataset)*splitratio)
+    trainset=list(dataset)
+    testset=[]
+    while len(testset)<testsize:
+        index=random.randrange(len(trainset))
+        testset.append(trainset.pop(index))
+    return[trainset,testset]
+def separatebyclass(dataset):
+    separated={}
+    for i in range(len(dataset)):
+        x=dataset[i]
+        if(x[-1] not in separated):
+            separated[x[-1]]=[]
+        separated[x[-1]].append(x)
+    return separated
+def compute_mean_std(dataset):
+    mean_std=[(st.mean(attribute),st.stdev(attribute))
+             for attribute in zip(*dataset)];
+    del mean_std[-1]
+    return mean_std
+def summarizebyclass(dataset):
+    separated=separatebyclass(dataset)
+    summary={}
+    for classvalue,instances in separated.items():
+        summary[classvalue]=compute_mean_std(instances)
+    return summary
+def estimate_probability(x,mean,stdev):
+    exponent=math.exp(-(math.pow(x-mean,2)/(2*math.pow(stdev,2))))
+    return (1/(math.sqrt(2*math.pi)*stdev))*exponent
+def calculateclassprobabilities(summaries,testVector):
+    p={}
+    for classvalue,classsummaries in summaries.items():
+        p[classvalue]=1
+        for i in range(len(classsummaries)):
+            mean,stdev=classsummaries[i]
+            x=testVector[i]
+            p[classvalue]*=estimate_probability(x,mean,stdev)
+    return p
+def predict(summaries,testVector):
+    all_p=calculateclassprobabilities(summaries,testVector)
+    bestLabel,bestProb=None,-1
+    for lbl,p in all_p.items():
+        if bestLabel is None or p > bestProb:
+            bestProb=p
+            bestLabel=lbl
+    return bestLabel
+def perform_classification(summaries,testset):
+    predictions=[]
+    for i in range(len(testset)):
+        result=predict(summaries,testset[i])
+        predictions.append(result)
+    return predictions
+
+def get_accuracy(testset,predictions):
+    correct=0
+    for i in range(len(testset)):
+        if testset[i][-1]==predictions[i]:
+            correct+=1
+    return (correct/float(len(testset)))*100.0
+        
+dataset = loadCsv('data5.csv');
+print('Total instances avaialable',len(dataset))
+print('total attrbutes present',len(dataset[0])-1)
+print('frst 5 instances')
+for i in range(5):
+    print(i+1,":",dataset[i])
+splitratio=0.2
+trainingset,testset=splitdataset(dataset,splitratio)
+print('total trainset is {0}\n test set is {1}\n'.format(len(trainingset),len(testset)))
+summaries=summarizebyclass(trainingset)
+predictions=perform_classification(summaries,testset)
+accuracy=get_accuracy(testset,predictions)
+print('accuracy is:',accuracy)
